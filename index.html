@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Open Highway</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c8a96e;
+    --amber: #e8b84b;
+    --dusk: #7b4f2e;
+    --night: #0d0d0f;
+    --asphalt: #1a1a1f;
+    --dust: #c4b49a;
+    --sky: #d4956a;
+    --grass: #4a6741;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--night);
+    font-family: 'Crimson Pro', Georgia, serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease;
+  }
+
+  /* Slide container */
+  .slider {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+  }
+
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Background layers */
+  .slide-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  /* Road lines animation */
+  @keyframes roadLines {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(100vh); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes grain {
+    0%, 100% { transform: translate(0,0); }
+    10% { transform: translate(-2%,-3%); }
+    30% { transform: translate(3%,-1%); }
+    50% { transform: translate(-1%,2%); }
+    70% { transform: translate(2%,3%); }
+    90% { transform: translate(-3%,1%); }
+  }
+
+  /* Grain overlay */
+  .grain {
+    position: fixed;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+    opacity: 0.25;
+    pointer-events: none;
+    animation: grain 0.5s steps(1) infinite;
+    z-index: 100;
+  }
+
+  /* SLIDE 1 — Title */
+  #slide1 .slide-bg {
+    background: linear-gradient(180deg, #0d0d0f 0%, #1c1008 50%, #2a1a08 100%);
+  }
+
+  .road-scene {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    overflow: hidden;
+  }
+
+  .road {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 180px solid transparent;
+    border-right: 180px solid transparent;
+    border-bottom: 400px solid #1a1a1f;
+  }
+
+  .road-stripe {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    background: var(--gold);
+    opacity: 0.6;
+    animation: roadLines 1.5s linear infinite;
+  }
+
+  .title-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    margin-top: -80px;
+  }
+
+  .eyebrow {
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.3s forwards;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(3.5rem, 8vw, 7rem);
+    font-weight: 400;
+    color: #f5ede0;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.6s forwards;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .subtitle {
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: var(--dust);
+    opacity: 0;
+    animation: fadeUp 1s ease 0.9s forwards;
+    letter-spacing: 0.05em;
+  }
+
+  /* SLIDE 2-6 — Story slides */
+  .story-slide .slide-bg {
+    background: linear-gradient(135deg, #0e0c0a 0%, #1a1208 60%, #0e0c0a 100%);
+  }
+
+  .slide-2 .slide-bg { background: linear-gradient(160deg, #090c12 0%, #0f1a24 60%, #060809 100%); }
+  .slide-3 .slide-bg { background: linear-gradient(150deg, #0a0e08 0%, #111a0e 50%, #0a0e08 100%); }
+  .slide-4 .slide-bg { background: linear-gradient(140deg, #100a06 0%, #1e1208 55%, #100a06 100%); }
+  .slide-5 .slide-bg { background: linear-gradient(155deg, #08080e 0%, #10101c 55%, #08080e 100%); }
+  .slide-6 .slide-bg { background: linear-gradient(145deg, #0e0c0a 0%, #1a140a 55%, #0e0c0a 100%); }
+
+  .story-content {
+    position: relative;
+    z-index: 2;
+    max-width: 720px;
+    padding: 2rem 3rem;
+  }
+
+  .slide-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    font-weight: 700;
+    color: var(--gold);
+    opacity: 0.08;
+    position: absolute;
+    top: -2rem;
+    left: 2.5rem;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .chapter-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1.8rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .chapter-label::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+    opacity: 0.6;
+  }
+
+  .story-text {
+    font-size: clamp(1.15rem, 1.8vw, 1.35rem);
+    line-height: 1.85;
+    color: #e8ddd0;
+    font-weight: 300;
+  }
+
+  .story-text strong {
+    color: var(--gold);
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  /* Decorative side element */
+  .side-deco {
+    position: absolute;
+    right: -1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 80px;
+    background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+    opacity: 0.4;
+  }
+
+  /* FINAL SLIDE */
+  #slide7 .slide-bg {
+    background: radial-gradient(ellipse at center, #1a1208 0%, #0a0804 100%);
+  }
+
+  .final-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    max-width: 600px;
+    padding: 2rem;
+  }
+
+  .final-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-style: italic;
+    color: #f0e8d8;
+    line-height: 1.5;
+    margin-bottom: 2rem;
+  }
+
+  .final-rule {
+    width: 60px;
+    height: 1px;
+    background: var(--gold);
+    margin: 0 auto 2rem;
+  }
+
+  .final-sub {
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    color: var(--dust);
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  /* Stars bg for final slide */
+  .stars {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle var(--dur) ease-in-out infinite;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--min-op); }
+    50% { opacity: var(--max-op); }
+  }
+
+  /* Navigation */
+  .nav {
+    position: fixed;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    z-index: 200;
+  }
+
+  .nav-btn {
+    background: none;
+    border: 1px solid rgba(200, 169, 110, 0.3);
+    color: var(--gold);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: none;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-btn:hover {
+    background: rgba(200, 169, 110, 0.1);
+    border-color: var(--gold);
+  }
+
+  .nav-dots {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(200, 169, 110, 0.3);
+    cursor: none;
+    transition: all 0.3s ease;
+  }
+
+  .dot.active {
+    background: var(--gold);
+    transform: scale(1.3);
+  }
+
+  /* Progress bar */
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(to right, var(--dusk), var(--gold));
+    z-index: 200;
+    transition: width 0.5s ease;
+  }
+
+  /* Slide-in animation for content */
+  .slide.active .story-content,
+  .slide.active .title-content,
+  .slide.active .final-content {
+    animation: fadeUp 0.9s ease 0.2s both;
+  }
+
+  /* Floating accent shapes */
+  .accent-shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.06;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="cursor" id="cursor"></div>
+<div class="progress" id="progress"></div>
+
+<div class="slider" id="slider">
+
+  <!-- SLIDE 1: Title -->
+  <div class="slide active" id="slide1">
+    <div class="slide-bg"></div>
+    <div class="road-scene">
+      <div class="road"></div>
+    </div>
+    <div class="title-content">
+      <p class="eyebrow">A personal essay</p>
+      <h1>The <em>Open</em><br>Highway</h1>
+      <p class="subtitle">On motion, silence, and the road that asks nothing of you</p>
+    </div>
+  </div>
+
+  <!-- SLIDE 2 -->
+  <div class="slide story-slide slide-2" id="slide2">
+    <div class="slide-bg"></div>
+    <div class="accent-shape" style="width:500px;height:500px;background:#3a6080;top:-100px;right:-100px;"></div>
+    <div class="story-content">
+      <div class="slide-number">01</div>
+      <p class="chapter-label">The Departure</p>
+      <p class="story-text">
+        I don't really know how to explain the highway thing without it coming out wrong. <strong>You just get on and something loosens up.</strong> I left because I couldn't be in the house anymore. Wasn't going anywhere specific. Just needed to go.
+      </p>
+      <div class="side-deco"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3 -->
+  <div class="slide story-slide slide-3" id="slide3">
+    <div class="slide-bg"></div>
+    <div class="accent-shape" style="width:400px;height:400px;background:#2a4a20;bottom:-80px;left:-80px;"></div>
+    <div class="story-content">
+      <div class="slide-number">02</div>
+      <p class="chapter-label">The Land</p>
+      <p class="story-text">
+       Flat out there where I was. Grass, fence posts, some trees so far off they looked fake. A grain elevator I pass every time and never think about. Hawks always hawks on that stretch, I swear. The sky got huge at some point and I stopped noticing the road for a second. <strong>Too much going on up there.</strong>
+      </p>
+      <div class="side-deco"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4 -->
+  <div class="slide story-slide slide-4" id="slide4">
+    <div class="slide-bg"></div>
+    <div class="accent-shape" style="width:450px;height:450px;background:#6a3a10;top:-50px;right:-50px;"></div>
+    <div class="story-content">
+      <div class="slide-number">03</div>
+      <p class="chapter-label">The Golden Hour</p>
+      <p class="story-text">
+      This old song came on. One I used to wear out completely. I turned it up way too loud and just sang, didn't have to think about the words at all, they were already there. Light was going golden by then, that late afternoon thing where everything looks a little better than it is. <strong>I just kept thinking okay, okay</strong> not about anything, just that.
+      </p>
+      <div class="side-deco"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5 -->
+  <div class="slide story-slide slide-5" id="slide5">
+    <div class="slide-bg"></div>
+    <div class="accent-shape" style="width:380px;height:380px;background:#1a1a4a;bottom:-60px;right:-60px;"></div>
+    <div class="story-content">
+      <div class="slide-number">04</div>
+      <p class="chapter-label">The Weight</p>
+      <p class="story-text">
+        There's a call I've been not making for two weeks. Some other stuff too, nothing that would sound like much if I said it out loud. It all just sat quieter out there. I don't think anything actually changed. <strong>I just got away from it far enough to stop feeling it right on top of me.</strong>
+      </p>
+      <div class="side-deco"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6 -->
+  <div class="slide story-slide slide-6" id="slide6">
+    <div class="slide-bg"></div>
+    <div class="accent-shape" style="width:420px;height:420px;background:#4a2a10;top:-80px;left:-80px;"></div>
+    <div class="story-content">
+      <div class="slide-number">05</div>
+      <p class="chapter-label">The Return</p>
+      <p class="story-text">
+       Turned around when it got dark. Came home. <strong>Felt more like myself, mostly.</strong> I know that sounds like nothing but it wasn't nothing.
+      </p>
+      <div class="side-deco"></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: Final -->
+  <div class="slide" id="slide7">
+    <div class="slide-bg"></div>
+    <div class="stars" id="stars"></div>
+    <div class="final-content">
+      <p class="final-quote">"The road asked nothing of me except to keep going, and for a while, that was enough."</p>
+      <div class="final-rule"></div>
+      <p class="final-sub">The Open Highway &nbsp;&bull;&nbsp; A Personal Essay</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<nav class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">&#8592;</button>
+  <div class="nav-dots" id="dots"></div>
+  <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">&#8594;</button>
+</nav>
+
+<script>
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+
+  // Slides
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let current = 0;
+
+  // Build dots
+  const dotsContainer = document.getElementById('dots');
+  for (let i = 0; i < totalSlides; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goTo(i);
+    dotsContainer.appendChild(dot);
+  }
+
+  function updateProgress() {
+    const pct = ((current + 1) / totalSlides) * 100;
+    document.getElementById('progress').style.width = pct + '%';
+  }
+
+  function goTo(index) {
+    slides[current].classList.remove('active');
+    document.querySelectorAll('.dot')[current].classList.remove('active');
+    current = Math.max(0, Math.min(index, totalSlides - 1));
+    slides[current].classList.add('active');
+    document.querySelectorAll('.dot')[current].classList.add('active');
+    updateProgress();
+  }
+
+  function changeSlide(dir) {
+    goTo(current + dir);
+  }
+
+  // Keyboard nav
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeSlide(1);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changeSlide(-1);
+  });
+
+  // Touch/swipe
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) changeSlide(diff > 0 ? 1 : -1);
+  });
+
+  // Generate stars for final slide
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 2 + 0.5;
+    const minOp = (Math.random() * 0.2 + 0.05).toFixed(2);
+    const maxOp = (parseFloat(minOp) + Math.random() * 0.5 + 0.2).toFixed(2);
+    star.style.cssText = `
+      width: ${size}px;
+      height: ${size}px;
+      left: ${Math.random() * 100}%;
+      top: ${Math.random() * 100}%;
+      --dur: ${(Math.random() * 3 + 2).toFixed(1)}s;
+      --min-op: ${minOp};
+      --max-op: ${maxOp};
+      animation-delay: ${(Math.random() * 3).toFixed(1)}s;
+    `;
+    starsEl.appendChild(star);
+  }
+
+  // Road stripes for slide 1
+  const roadScene = document.querySelector('.road-scene');
+  for (let i = 0; i < 6; i++) {
+    const stripe = document.createElement('div');
+    stripe.className = 'road-stripe';
+    const h = Math.random() * 40 + 20;
+    stripe.style.cssText = `
+      height: ${h}px;
+      bottom: ${i * 70}px;
+      animation-delay: ${i * 0.25}s;
+      opacity: ${0.3 + (i * 0.1)};
+    `;
+    roadScene.appendChild(stripe);
+  }
+
+  updateProgress();
+</script>
+</body>
+</html>
